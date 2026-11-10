@@ -62,7 +62,8 @@ export async function addToCart(
   if (!product) return { error: "This product no longer exists." };
 
   const stock = await getStock(productId);
-  if (!stock || stock.stock <= 0) return { error: "This product is out of stock." };
+  if (!stock) return { error: "Stock information is unavailable right now. Please try again." };
+  if (stock.stock <= 0) return { error: "This product is out of stock." };
 
   const token = await getCartToken();
   const cart = await fetchCart(token);

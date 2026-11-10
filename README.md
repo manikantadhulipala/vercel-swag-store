@@ -101,6 +101,7 @@ The home page, product pages, and search use Suspense, so the shell renders imme
 - **Promotion banner.** The sample promotions from the API have validity dates that have passed. The banner trusts the API's `active` flag rather than comparing dates, so it shows the current promotion whenever the API marks one active.
 - **Footer year.** The year is read at request time (`connection()`), so it is always current and does not go stale in a cached build.
 - **Shared constants.** Search constants live in `src/lib/search.ts`, not in the client component file. Importing a value from a `"use client"` module into a Server Component gives a client reference, not the value.
+- **Stock is live.** The API returns a different stock value on each request, so the product page, the quantity limit, and the add-to-cart check can disagree from one request to the next. The add-to-cart action checks stock at the moment of the click. A zero result shows "out of stock", and a failed lookup shows a retry message.
 - **Stock limits.** The quantity selector is capped at available stock, and the Server Action enforces the same cap, counting what is already in the cart.
 
 ## API notes
