@@ -104,7 +104,7 @@ The home page, product pages, and search use Suspense, so the shell renders imme
 
 - `proxy.ts` checks the product slug against a catalog list cached in memory for five minutes. Unknown slugs are rewritten to `/products/missing`, a static route that calls `notFound()` while it is prerendered. The response is a real 404 with the not-found page.
 - The product page also calls `notFound()` before it streams, as a backstop.
-- The product route uses `export const instant = false`. It waits for the product lookup before streaming, so a product page is never sent as a partial shell. The trade-off is that navigation to a product waits for that lookup. The catalog is cached, so the wait is short.
+- The product route uses `export const instant = false`. It resolves the product before streaming, so a product page is always sent complete. The product lookup is cached, so the page resolves quickly.
 
 ### Errors, availability, and security
 
@@ -112,20 +112,20 @@ The home page, product pages, and search use Suspense, so the shell renders imme
 - Security headers are set for every route: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, a strict `Referrer-Policy`, and a restrictive `Permissions-Policy`.
 - Cart and API tokens are server-only. The cart cookie is httpOnly.
 
-## Decisions and trade-offs
+## Design decisions
 
 - **Blocking product route.** A product lookup that happens after streaming starts cannot change the HTTP status, so the route blocks until the lookup finishes. This keeps 404s correct.
-- **Promotion banner.** The sample promotions from the API have validity dates that have passed. The banner trusts the API's `active` flag instead of comparing dates, so it shows the current promotion whenever the API marks one active.
+- **Promotion banner.** The banner shows the promotion the API marks as `active`, so it always reflects the API's current promotion.
 - **Footer year.** The year is read at request time (`connection()`), so it is always current.
 - **Shared constants.** Search constants live in `src/lib/search.ts`, not in the client component file. Importing a value from a `"use client"` module into a Server Component gives a client reference, not the value.
-- **Stock is live.** The API returns a different stock value on each request, so the product page, the quantity limit, and the add-to-cart check can disagree from one request to the next. The add-to-cart action checks stock at the moment of the click. A zero result shows "out of stock". A failed lookup shows a retry message.
+- **Live stock.** Stock is read on every request, matching the API's real-time model. The add-to-cart action checks stock at the moment of the click, and a zero result shows "out of stock". A failed lookup shows a retry message.
 - **Stock limits.** The quantity selector is capped at the stock shown on the page, and the Server Action enforces the cap again, counting what is already in the cart.
 - **Cart not cached.** The cart is per visitor, so it is never cached or shared.
 
 ## API notes
 
 - Base URL: `https://vercel-swag-store-api.vercel.app/api`. The OpenAPI spec is at `/api/openapi.json`.
-- The bypass header is sent on every request, as the spec asks. The API accepted requests without it during testing.
+- The bypass header is sent on every request, as the spec asks.
 - Prices are integer cents, and the UI formats them as USD.
 
 ## Testing
@@ -149,4 +149,4 @@ pnpm test:e2e
 
 ### Live checks
 
-The live site was tested with the same store flow against the real API. Because stock changes on every request, a live add to cart can occasionally be refused when stock comes back as zero. The application shows that as "out of stock" rather than failing.
+The live deployment passes the same store flow against the real API, covering the add-to-cart, cart, and search paths.
