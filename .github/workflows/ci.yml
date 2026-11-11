@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    name: Type check, lint, unit tests, build, and browser tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SWAG_API_BASE_URL: https://vercel-swag-store-api.vercel.app/api
+      SWAG_API_BYPASS_TOKEN: ${{ secrets.SWAG_API_BYPASS_TOKEN }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check, lint, and format check
+        run: pnpm check-types && pnpm exec biome check .
+
+      - name: Unit tests
+        run: pnpm test:unit
+
+      - name: Production build
+        run: pnpm build
+
+      - name: Install Google Chrome for browser tests
+        id: chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Browser tests
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: pnpm test:e2e
