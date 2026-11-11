@@ -2,6 +2,7 @@ import "server-only";
 
 import { cookies } from "next/headers";
 import { ApiError, apiRequest } from "./api/client";
+import { CartSchema } from "./api/schemas";
 import type { Cart } from "./api/types";
 
 // The cart token is stored in a session cookie (no expiry), so the cart lasts
@@ -31,7 +32,7 @@ export async function clearCartToken(): Promise<void> {
 }
 
 export async function createCart(): Promise<string> {
-  const { data } = await apiRequest<Cart>("/cart/create", { method: "POST" });
+  const { data } = await apiRequest("/cart/create", { schema: CartSchema, method: "POST" });
   return data.token;
 }
 
@@ -41,7 +42,7 @@ export async function fetchCart(token: string | undefined): Promise<Cart | null>
   if (!token) return null;
 
   try {
-    const { data } = await apiRequest<Cart>("/cart", { cartToken: token });
+    const { data } = await apiRequest("/cart", { schema: CartSchema, cartToken: token });
     return data;
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;

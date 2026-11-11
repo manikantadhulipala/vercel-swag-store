@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { apiRequest } from "@/lib/api/client";
-import type { Product } from "@/lib/api/types";
+import { ProductSchema } from "@/lib/api/schemas";
 
 // Keep the proxy fast: remember the known product slugs and ids for a few minutes.
 const KNOWN_KEYS_TTL_MS = 5 * 60 * 1000;
@@ -9,7 +10,10 @@ let knownKeys: { keys: Set<string>; expiresAt: number } | null = null;
 async function getKnownProductKeys(): Promise<Set<string>> {
   if (knownKeys && knownKeys.expiresAt > Date.now()) return knownKeys.keys;
 
-  const { data } = await apiRequest<Product[]>("/products", { query: { limit: 100 } });
+  const { data } = await apiRequest("/products", {
+    schema: z.array(ProductSchema),
+    query: { limit: 100 },
+  });
   const keys = new Set(data.flatMap((product) => [product.slug, product.id]));
   knownKeys = { keys, expiresAt: Date.now() + KNOWN_KEYS_TTL_MS };
   return keys;

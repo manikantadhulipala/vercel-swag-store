@@ -11,6 +11,7 @@ const MOCK_BASE = `http://localhost:${MOCK_PORT}/api`;
 
 const jobs = [
   { scenario: "stable", test: ["e2e/store.mjs"] },
+  { scenario: "stable", test: ["e2e/a11y.mjs"] },
   { scenario: "out-of-stock", test: ["e2e/scenarios.mjs", "out-of-stock"] },
   { scenario: "low-stock", test: ["e2e/scenarios.mjs", "low-stock"] },
   { scenario: "expired-cart", test: ["e2e/scenarios.mjs", "expired-cart"] },

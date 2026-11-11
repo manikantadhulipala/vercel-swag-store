@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { LogoMark } from "@/components/logo-mark";
-import { ProductGrid } from "@/components/product-card";
+import { ProductGrid, ProductGridSkeleton } from "@/components/product-grid";
 import { PromoBanner } from "@/components/promo-banner";
-import { SKELETON_SLOTS } from "@/components/skeleton-slots";
 import { listProducts } from "@/lib/api/catalog";
 
 // The root title template only applies to nested routes, so the home title is set in full.
@@ -34,22 +33,6 @@ async function FeaturedProducts() {
   }
 
   return <ProductGrid products={products} />;
-}
-
-function FeaturedSkeleton() {
-  return (
-    <ul
-      className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3"
-      aria-label="Loading products"
-    >
-      {SKELETON_SLOTS.slice(0, FEATURED_COUNT).map((slot) => (
-        <li key={slot} className="flex flex-col gap-3">
-          <div className="aspect-square animate-pulse rounded-lg bg-gray-100" />
-          <div className="h-4 w-3/4 animate-pulse rounded bg-gray-100" />
-        </li>
-      ))}
-    </ul>
-  );
 }
 
 export default function HomePage() {
@@ -90,7 +73,9 @@ export default function HomePage() {
             View all
           </Link>
         </div>
-        <Suspense fallback={<FeaturedSkeleton />}>
+        <Suspense
+          fallback={<ProductGridSkeleton count={FEATURED_COUNT} label="Loading products" />}
+        >
           <FeaturedProducts />
         </Suspense>
       </section>

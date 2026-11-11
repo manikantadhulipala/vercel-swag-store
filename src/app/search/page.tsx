@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { ProductGrid } from "@/components/product-card";
-import { SKELETON_SLOTS } from "@/components/skeleton-slots";
+import { ProductGrid, ProductGridSkeleton } from "@/components/product-grid";
 import { getCategories, listProducts } from "@/lib/api/catalog";
 import type { Category } from "@/lib/api/types";
 import { DEFAULT_PRODUCT_LIMIT, MIN_QUERY_LENGTH, SEARCH_RESULT_LIMIT } from "@/lib/search";
@@ -39,7 +38,7 @@ export default function SearchPage({ searchParams }: PageProps) {
         <SearchFormLoader />
       </Suspense>
 
-      <Suspense fallback={<ResultsSkeleton />}>
+      <Suspense fallback={<ProductGridSkeleton count={3} label="Searching" />}>
         <SearchResultsLoader searchParams={searchParams} />
       </Suspense>
     </main>
@@ -63,7 +62,10 @@ async function SearchResultsLoader({ searchParams }: PageProps) {
   const query = rawQuery.length >= MIN_QUERY_LENGTH ? rawQuery : "";
 
   return (
-    <Suspense key={`${query}|${category}`} fallback={<ResultsSkeleton />}>
+    <Suspense
+      key={`${query}|${category}`}
+      fallback={<ProductGridSkeleton count={3} label="Searching" />}
+    >
       <SearchResults query={query} category={category} categories={categories} />
     </Suspense>
   );
@@ -138,22 +140,5 @@ function SearchFormSkeleton() {
       role="status"
       aria-label="Loading search"
     />
-  );
-}
-
-function ResultsSkeleton() {
-  return (
-    <ul
-      className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3"
-      role="status"
-      aria-label="Searching"
-    >
-      {SKELETON_SLOTS.slice(0, 3).map((slot) => (
-        <li key={slot} className="flex flex-col gap-3">
-          <div className="aspect-square animate-pulse rounded-lg bg-gray-100" />
-          <div className="h-4 w-3/4 animate-pulse rounded bg-gray-100" />
-        </li>
-      ))}
-    </ul>
   );
 }

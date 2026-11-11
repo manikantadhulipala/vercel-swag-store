@@ -1,7 +1,12 @@
 import "server-only";
 
-// Thin wrapper around the Swag Store API. Every request sends the protection
-// bypass header. Cart requests also send the x-cart-token header.
+import type { z } from "zod";
+
+// Server-only wrapper around the Swag Store API. Every request sends the protection
+// bypass header, and cart requests also send the x-cart-token header. Every response
+// is validated against a schema before it is used, and failures are typed ApiErrors.
+
+const REQUEST_TIMEOUT_MS = 10_000;
 
 export class ApiError extends Error {
   readonly status: number;
@@ -15,10 +20,10 @@ export class ApiError extends Error {
   }
 }
 
-type ApiSuccess<T> = {
+type ApiSuccess = {
   success: true;
-  data: T;
-  meta?: Record<string, unknown>;
+  data: unknown;
+  meta?: unknown;
 };
 
 type ApiFailure = {
@@ -26,7 +31,8 @@ type ApiFailure = {
   error: { code: string; message: string; details?: unknown };
 };
 
-type RequestOptions = {
+type RequestOptions<S extends z.ZodType> = {
+  schema: S;
   method?: "GET" | "POST" | "PATCH" | "DELETE";
   body?: unknown;
   query?: Record<string, string | number | boolean | undefined>;
@@ -44,10 +50,10 @@ function getConfig() {
   return { baseUrl: baseUrl.replace(/\/$/, ""), bypassToken };
 }
 
-export async function apiRequest<T>(
+export async function apiRequest<S extends z.ZodType>(
   path: string,
-  options: RequestOptions = {}
-): Promise<{ data: T; headers: Headers; meta?: Record<string, unknown> }> {
+  options: RequestOptions<S>
+): Promise<{ data: z.output<S>; meta: unknown }> {
   const { baseUrl, bypassToken } = getConfig();
   const url = new URL(`${baseUrl}${path}`);
 
@@ -62,13 +68,19 @@ export async function apiRequest<T>(
   if (options.cartToken) headers.set("x-cart-token", options.cartToken);
   if (options.body !== undefined) headers.set("Content-Type", "application/json");
 
-  const response = await fetch(url, {
-    method: options.method ?? "GET",
-    headers,
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: options.method ?? "GET",
+      headers,
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+  } catch {
+    throw new ApiError(503, "UNAVAILABLE", "The Swag Store API could not be reached.");
+  }
 
-  const payload = (await response.json().catch(() => null)) as ApiSuccess<T> | ApiFailure | null;
+  const payload = (await response.json().catch(() => null)) as ApiSuccess | ApiFailure | null;
 
   if (!response.ok || !payload || payload.success === false) {
     const failure = payload && payload.success === false ? payload.error : undefined;
@@ -79,5 +91,14 @@ export async function apiRequest<T>(
     );
   }
 
-  return { data: payload.data, headers: response.headers, meta: payload.meta };
+  const parsed = options.schema.safeParse(payload.data);
+  if (!parsed.success) {
+    throw new ApiError(
+      502,
+      "INVALID_RESPONSE",
+      `Unexpected response from the Swag Store API for ${options.method ?? "GET"} ${path}.`
+    );
+  }
+
+  return { data: parsed.data, meta: payload.meta };
 }

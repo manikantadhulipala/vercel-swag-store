@@ -44,16 +44,18 @@ function applyScenario(req, res, path) {
   const stockMatch = path.match(/^\/products\/([^/]+)\/stock$/);
   if (stockMatch) {
     const productId = stockMatch[1];
-    if (SCENARIO === "stable") {
-      json(res, 200, stockBody(productId, 50));
-      return true;
-    }
     if (SCENARIO === "out-of-stock") {
       json(res, 200, stockBody(productId, 0));
       return true;
     }
     if (SCENARIO === "low-stock" && productId === "tote_001") {
       json(res, 200, stockBody(productId, 2));
+      return true;
+    }
+    // Every other scenario pins stock to a healthy value, so only the scenario's own
+    // edge case can change the outcome.
+    if (SCENARIO) {
+      json(res, 200, stockBody(productId, 50));
       return true;
     }
   }

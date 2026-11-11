@@ -4,31 +4,35 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getProduct, getStock } from "@/lib/api/catalog";
 import { ApiError, apiRequest } from "@/lib/api/client";
-import type { Cart } from "@/lib/api/types";
+import { CartSchema } from "@/lib/api/schemas";
 import { clearCartToken, createCart, fetchCart, getCartToken, setCartToken } from "@/lib/cart";
+import {
+  addQuantityError,
+  CART_EXPIRED_MESSAGE,
+  MAX_LINE_QUANTITY,
+  quantityInCart,
+  STOCK_UNAVAILABLE_MESSAGE,
+  updateQuantityError,
+} from "@/lib/cart-rules";
 
 export type CartActionState = {
   error?: string;
   success?: string;
 };
 
-const MAX_LINE_QUANTITY = 99;
+const productIdSchema = z.string().min(1).max(100);
 
 const addSchema = z.object({
-  productId: z.string().min(1).max(100),
+  productId: productIdSchema,
   quantity: z.coerce.number().int().min(1).max(MAX_LINE_QUANTITY),
 });
 
 const updateSchema = z.object({
-  productId: z.string().min(1).max(100),
+  productId: productIdSchema,
   quantity: z.coerce.number().int().min(0).max(MAX_LINE_QUANTITY),
 });
 
-const removeSchema = z.object({
-  productId: z.string().min(1).max(100),
-});
-
-const CART_EXPIRED_MESSAGE = "Your cart has expired. Please try again.";
+const removeSchema = z.object({ productId: productIdSchema });
 
 // Returns a usable cart token, creating a cart and storing its token if needed.
 async function ensureCartToken(): Promise<string> {
@@ -40,10 +44,6 @@ async function ensureCartToken(): Promise<string> {
   return token;
 }
 
-function quantityInCart(cart: Cart | null, productId: string): number {
-  return cart?.items.find((item) => item.productId === productId)?.quantity ?? 0;
-}
-
 export async function addToCart(
   _previousState: CartActionState,
   formData: FormData
@@ -53,7 +53,7 @@ export async function addToCart(
     quantity: formData.get("quantity"),
   });
   if (!parsed.success) {
-    return { error: "Choose a quantity between 1 and 99." };
+    return { error: `Choose a quantity between 1 and ${MAX_LINE_QUANTITY}.` };
   }
 
   const { productId, quantity } = parsed.data;
@@ -62,27 +62,21 @@ export async function addToCart(
   if (!product) return { error: "This product no longer exists." };
 
   const stock = await getStock(productId);
-  if (!stock) return { error: "Stock information is unavailable right now. Please try again." };
-  if (stock.stock <= 0) return { error: "This product is out of stock." };
+  if (!stock) return { error: STOCK_UNAVAILABLE_MESSAGE };
 
-  const token = await getCartToken();
-  const cart = await fetchCart(token);
-  const alreadyInCart = quantityInCart(cart, productId);
-
-  if (alreadyInCart + quantity > stock.stock) {
-    const remaining = Math.max(stock.stock - alreadyInCart, 0);
-    return {
-      error:
-        remaining === 0
-          ? "You already have all available stock in your cart."
-          : `Only ${remaining} more available.`,
-    };
-  }
+  const cart = await fetchCart(await getCartToken());
+  const stockError = addQuantityError({
+    requested: quantity,
+    inCart: quantityInCart(cart?.items, productId),
+    available: stock.stock,
+  });
+  if (stockError) return { error: stockError };
 
   const cartToken = await ensureCartToken();
 
   try {
-    await apiRequest<Cart>("/cart", {
+    await apiRequest("/cart", {
+      schema: CartSchema,
       method: "POST",
       cartToken,
       body: { productId, quantity },
@@ -108,7 +102,7 @@ export async function updateCartQuantity(
     quantity: formData.get("quantity"),
   });
   if (!parsed.success) {
-    return { error: "Choose a quantity between 0 and 99." };
+    return { error: `Choose a quantity between 0 and ${MAX_LINE_QUANTITY}.` };
   }
 
   const { productId, quantity } = parsed.data;
@@ -118,13 +112,14 @@ export async function updateCartQuantity(
   if (quantity > 0) {
     const stock = await getStock(productId);
     if (!stock) return { error: "This product no longer exists." };
-    if (quantity > stock.stock) {
-      return { error: `Only ${stock.stock} available.` };
-    }
+
+    const stockError = updateQuantityError({ requested: quantity, available: stock.stock });
+    if (stockError) return { error: stockError };
   }
 
   try {
-    await apiRequest<Cart>(`/cart/${encodeURIComponent(productId)}`, {
+    await apiRequest(`/cart/${encodeURIComponent(productId)}`, {
+      schema: CartSchema,
       method: "PATCH",
       cartToken: token,
       body: { quantity },
@@ -149,7 +144,8 @@ export async function removeFromCart(formData: FormData): Promise<void> {
   if (!token) return;
 
   try {
-    await apiRequest<Cart>(`/cart/${encodeURIComponent(parsed.data.productId)}`, {
+    await apiRequest(`/cart/${encodeURIComponent(parsed.data.productId)}`, {
+      schema: CartSchema,
       method: "DELETE",
       cartToken: token,
     });
