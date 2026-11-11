@@ -33,8 +33,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const path = `/products/${product.slug}`;
-  const image = product.images[0];
 
+  // The Open Graph image comes from opengraph-image.tsx in this folder.
   return {
     title: product.name,
     description: product.description,
@@ -43,7 +43,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: product.name,
       description: product.description,
       url: path,
-      images: image ? [{ url: image, alt: product.name }] : undefined,
     },
   };
 }
