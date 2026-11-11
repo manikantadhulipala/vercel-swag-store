@@ -101,6 +101,7 @@ e2e/                        Browser test suite and API mock
 
 - Node.js 20 or later
 - pnpm 9 or later
+- Google Chrome (optional, required only for `pnpm test:e2e`)
 
 ### Setup
 
