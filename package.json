@@ -9,7 +9,8 @@
     "check-types": "tsc --noEmit",
     "lint": "biome lint .",
     "format": "biome check --write .",
-    "check": "pnpm check-types && biome check ."
+    "check": "pnpm check-types && biome check .",
+    "test:e2e": "node e2e/run.mjs"
   },
   "dependencies": {
     "next": "16.4.5",
@@ -24,6 +25,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "puppeteer-core": "^24.43.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   },
