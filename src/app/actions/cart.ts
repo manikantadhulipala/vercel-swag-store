@@ -9,7 +9,6 @@ import { clearCartToken, createCart, fetchCart, getCartToken, setCartToken } fro
 import {
   addQuantityError,
   CART_EXPIRED_MESSAGE,
-  MAX_LINE_QUANTITY,
   quantityInCart,
   STOCK_UNAVAILABLE_MESSAGE,
   updateQuantityError,
@@ -24,12 +23,12 @@ const productIdSchema = z.string().min(1).max(100);
 
 const addSchema = z.object({
   productId: productIdSchema,
-  quantity: z.coerce.number().int().min(1).max(MAX_LINE_QUANTITY),
+  quantity: z.coerce.number().int().min(1),
 });
 
 const updateSchema = z.object({
   productId: productIdSchema,
-  quantity: z.coerce.number().int().min(0).max(MAX_LINE_QUANTITY),
+  quantity: z.coerce.number().int().min(0),
 });
 
 const removeSchema = z.object({ productId: productIdSchema });
@@ -53,7 +52,7 @@ export async function addToCart(
     quantity: formData.get("quantity"),
   });
   if (!parsed.success) {
-    return { error: `Choose a quantity between 1 and ${MAX_LINE_QUANTITY}.` };
+    return { error: "Choose a quantity of at least 1." };
   }
 
   const { productId, quantity } = parsed.data;
@@ -102,7 +101,7 @@ export async function updateCartQuantity(
     quantity: formData.get("quantity"),
   });
   if (!parsed.success) {
-    return { error: `Choose a quantity between 0 and ${MAX_LINE_QUANTITY}.` };
+    return { error: "Choose a quantity of 0 or more." };
   }
 
   const { productId, quantity } = parsed.data;

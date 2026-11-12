@@ -1,6 +1,5 @@
 // Pure cart rules, kept free of framework and server imports so they can be unit tested.
 
-export const MAX_LINE_QUANTITY = 99;
 export const CART_EXPIRED_MESSAGE = "Your cart has expired. Please try again.";
 export const STOCK_UNAVAILABLE_MESSAGE =
   "Stock information is unavailable right now. Please try again.";

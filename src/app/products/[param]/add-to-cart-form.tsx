@@ -3,8 +3,6 @@
 import { useActionState, useState } from "react";
 import { addToCart, type CartActionState } from "@/app/actions/cart";
 
-const MAX_LINE_QUANTITY = 99;
-
 const initialState: CartActionState = {};
 
 export function AddToCartForm({ productId, stock }: { productId: string; stock: number }) {
@@ -12,7 +10,7 @@ export function AddToCartForm({ productId, stock }: { productId: string; stock: 
   const [quantity, setQuantity] = useState(1);
 
   const outOfStock = stock <= 0;
-  const maxQuantity = Math.min(stock, MAX_LINE_QUANTITY);
+  const maxQuantity = stock;
 
   const clamp = (value: number) => {
     if (Number.isNaN(value)) return 1;

@@ -26,18 +26,20 @@ export function SearchForm({ categories }: { categories: Category[] }) {
     [pathname, router]
   );
 
-  // Debounced search. Each change resets the timer. Clearing the input clears
-  // the search immediately, without waiting for the debounce. Re-running when the
-  // URL changes is harmless: the URL already matches, so nothing navigates.
+  // Debounced search. Each change resets the timer. Dropping below the minimum
+  // length clears the search immediately, without waiting for the debounce.
+  // Re-running when the URL changes is harmless: the URL already matches, so nothing navigates.
   useEffect(() => {
     const trimmed = query.trim();
 
-    if (trimmed.length === 0) {
+    // Below the minimum (including an empty input), the results on screen are stale,
+    // so the search state is cleared at once.
+    if (trimmed.length < MIN_QUERY_LENGTH) {
       if (urlQuery !== "") navigate("", category);
       return;
     }
 
-    if (trimmed.length < MIN_QUERY_LENGTH || trimmed === urlQuery) return;
+    if (trimmed === urlQuery) return;
 
     const timer = setTimeout(() => navigate(trimmed, category), SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);

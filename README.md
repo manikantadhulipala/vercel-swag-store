@@ -57,7 +57,7 @@ Pages stream their dynamic content behind Suspense boundaries, so the page shell
 
 - The URL is the source of truth: `/search?q=...&category=...`.
 - Results come from the API's search filter, limited to five per query. With no query, six products are shown, filtered by category when one is selected.
-- Typing restarts a 300 ms debounce. Clearing the input clears the search immediately.
+- Typing restarts a 300 ms debounce. When the input drops below three characters, the search state is cleared immediately, so results never belong to an older query.
 
 ### Error handling
 
