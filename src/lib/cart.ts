@@ -31,9 +31,16 @@ export async function clearCartToken(): Promise<void> {
   store.delete(CART_COOKIE);
 }
 
+// The API returns the cart token in the x-cart-token response header (the documented
+// source). The body also carries it, so the body is used only as a fallback.
 export async function createCart(): Promise<string> {
-  const { data } = await apiRequest("/cart/create", { schema: CartSchema, method: "POST" });
-  return data.token;
+  const { data, headers } = await apiRequest("/cart/create", {
+    schema: CartSchema,
+    method: "POST",
+  });
+  const token = headers.get("x-cart-token") ?? data.token;
+  if (!token) throw new Error("The Vercel Swag Store API did not return a cart token.");
+  return token;
 }
 
 // Returns null when there is no cart token, or when the API no longer knows the

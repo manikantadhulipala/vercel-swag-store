@@ -16,8 +16,8 @@ A production storefront for the Vercel Swag Store, built with **Next.js 16**, **
 | **Search**          | Server-side filtering by name, description, and tags. Starts after three characters, with a 300 ms debounce, Enter or button submission, a category filter, and results up to five per query. Search state lives in the URL, so results persist on refresh and in shared links |
 | **Cart**            | Add, update quantity, and remove items. Shows image, price, quantity, and line total for each item, with a subtotal. The cart persists for the browser session, and the header badge shows the item count                                                                      |
 | **Navigation**      | Persistent header with logo, navigation links, and cart indicator. Footer with copyright and the current year                                                                                                                                                                  |
-| **SEO and sharing** | Root metadata with a title template, per-page metadata, Open Graph and canonical URLs, a dynamic sitemap, `robots.txt`, and a generated default Open Graph image                                                                                                               |
-| **Reliability**     | Clear 404 responses for unknown products, recoverable error screens with retry, and a global fallback for root-layout failures                                                                                                                                                 |
+| **SEO and sharing** | Root metadata from the store config (store name, title template, default description), a `generator` meta tag and `theme-color`, per-page metadata, Open Graph and canonical URLs, a dynamic sitemap, `robots.txt`, and a generated default Open Graph image                   |
+| **Reliability**     | Clear 404 responses for unknown products, recoverable error screens with retry, a global fallback for root-layout failures, and a health endpoint at `/api/health` that reports the storefront and the API                                                                     |
 | **Security**        | Server-only API credentials, httpOnly session cookie for the cart, and security headers on every response (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`)                                                                               |
 
 ---
@@ -28,13 +28,14 @@ A production storefront for the Vercel Swag Store, built with **Next.js 16**, **
 
 Cache Components is enabled (`cacheComponents: true`). Each type of data uses the caching strategy that fits how often it changes:
 
-| Data                          | Strategy                                  | Reason                                                     |
-| ----------------------------- | ----------------------------------------- | ---------------------------------------------------------- |
-| Product list, product details | `"use cache"` with `cacheLife("minutes")` | Catalog changes infrequently and is shared by all visitors |
-| Categories                    | `"use cache"` with `cacheLife("hours")`   | Changes least often                                        |
-| Stock                         | Request-time, inside `<Suspense>`         | Updates on every request, so it is never cached            |
-| Promotion banner              | Request-time, inside `<Suspense>`         | The API selects a promotion per request                    |
-| Cart                          | Request-time, per session cookie          | Personal to each visitor                                   |
+| Data                          | Strategy                                  | Reason                                                         |
+| ----------------------------- | ----------------------------------------- | -------------------------------------------------------------- |
+| Product list, product details | `"use cache"` with `cacheLife("minutes")` | Catalog changes infrequently and is shared by all visitors     |
+| Categories                    | `"use cache"` with `cacheLife("hours")`   | Changes least often                                            |
+| Stock                         | Request-time, inside `<Suspense>`         | Updates on every request, so it is never cached                |
+| Promotion banner              | Request-time, inside `<Suspense>`         | The API selects a promotion per request                        |
+| Store config (name, SEO)      | `"use cache"` with `cacheLife("hours")`   | Changes rarely. Falls back to built-in defaults if unreachable |
+| Cart                          | Request-time, per session cookie          | Personal to each visitor                                       |
 
 Pages stream their dynamic content behind Suspense boundaries, so the page shell renders immediately and the rest arrives as it resolves. Product pages are prerendered for every product in the catalog at build time.
 
@@ -48,6 +49,7 @@ Pages stream their dynamic content behind Suspense boundaries, so the page shell
 - The first add creates a cart through the API and stores its token in an httpOnly session cookie (`swag_cart_token`).
 - Add, quantity change, and remove run as Server Actions. Each action checks live stock before writing, so limits are enforced on the server.
 - A quantity of 0 removes the item.
+- The cart token comes from the `x-cart-token` response header of `POST /cart/create`, as the API documents. The response body's `token` field is used only as a fallback.
 - Each action revalidates the layout, so the header badge updates immediately.
 - When a cart has expired on the API side, the cookie is cleared and the visitor is shown a clear message.
 
@@ -82,10 +84,12 @@ src/
     sitemap.ts              Sitemap
     robots.ts               robots.txt
     opengraph-image.tsx     Default Open Graph image
+    api/health/route.ts     Health endpoint for the storefront and the API
   components/               Header, footer, product card, promotion banner
   lib/
     api/client.ts           Server-only API client with typed errors
     api/catalog.ts          Catalog reads (cached) and stock and promotion reads (live)
+    api/store.ts            Store config (cached) and API health
     cart.ts                 Cart session and cart reads
     search.ts               Shared search rules and URL building
     site.ts                 Public site URL
@@ -163,8 +167,8 @@ pnpm test:e2e
 ## API integration
 
 - **Base URL:** `https://vercel-swag-store-api.vercel.app/api`
-- **Specification:** `/api/openapi.json`
-- **Endpoints used:** products (list, detail, stock), categories, promotions, and cart (create, read, add, update, remove)
+- **Specification:** https://vercel-swag-store-api.vercel.app/api/openapi.json
+- **Endpoints used:** products (list, detail, stock), categories, promotions, store config, health, and cart (create, read, add, update, remove)
 - **Pricing:** prices are integer cents, formatted as USD in the interface
 - **Authentication:** the protection bypass header is sent on every request, and cart requests include the `x-cart-token` header
 

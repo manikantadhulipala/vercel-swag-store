@@ -2,7 +2,7 @@ import "server-only";
 
 import type { z } from "zod";
 
-// Server-only wrapper around the Swag Store API. Every request sends the protection
+// Server-only wrapper around the Vercel Swag Store API. Every request sends the protection
 // bypass header, and cart requests also send the x-cart-token header. Every response
 // is validated against a schema before it is used, and failures are typed ApiErrors.
 
@@ -53,7 +53,7 @@ function getConfig() {
 export async function apiRequest<S extends z.ZodType>(
   path: string,
   options: RequestOptions<S>
-): Promise<{ data: z.output<S>; meta: unknown }> {
+): Promise<{ data: z.output<S>; meta: unknown; headers: Headers }> {
   const { baseUrl, bypassToken } = getConfig();
   const url = new URL(`${baseUrl}${path}`);
 
@@ -77,7 +77,7 @@ export async function apiRequest<S extends z.ZodType>(
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
   } catch {
-    throw new ApiError(503, "UNAVAILABLE", "The Swag Store API could not be reached.");
+    throw new ApiError(503, "UNAVAILABLE", "The Vercel Swag Store API could not be reached.");
   }
 
   const payload = (await response.json().catch(() => null)) as ApiSuccess | ApiFailure | null;
@@ -87,7 +87,7 @@ export async function apiRequest<S extends z.ZodType>(
     throw new ApiError(
       response.status,
       failure?.code ?? "UNKNOWN",
-      failure?.message ?? `Swag Store API request failed with status ${response.status}`
+      failure?.message ?? `Vercel Swag Store API request failed with status ${response.status}`
     );
   }
 
@@ -96,9 +96,9 @@ export async function apiRequest<S extends z.ZodType>(
     throw new ApiError(
       502,
       "INVALID_RESPONSE",
-      `Unexpected response from the Swag Store API for ${options.method ?? "GET"} ${path}.`
+      `Unexpected response from the Vercel Swag Store API for ${options.method ?? "GET"} ${path}.`
     );
   }
 
-  return { data: parsed.data, meta: payload.meta };
+  return { data: parsed.data, meta: payload.meta, headers: response.headers };
 }

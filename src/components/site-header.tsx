@@ -49,7 +49,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2 font-semibold text-gray-900">
             <LogoMark className="h-6 w-6" />
-            <span>Swag Store</span>
+            <span>Vercel Swag Store</span>
           </Link>
           <nav aria-label="Main" className="flex items-center gap-4 text-gray-600 text-sm">
             <Link href="/" className="hover:text-gray-900">

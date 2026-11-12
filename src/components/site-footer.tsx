@@ -17,7 +17,7 @@ export function SiteFooter() {
           <Suspense fallback={null}>
             <CopyrightYear />
           </Suspense>{" "}
-          Swag Store. All rights reserved.
+          Vercel Swag Store. All rights reserved.
         </p>
         <p>Built with Next.js on Vercel.</p>
       </div>

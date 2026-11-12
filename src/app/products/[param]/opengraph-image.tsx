@@ -58,7 +58,7 @@ export default async function ProductOpenGraphImage({ params }: Props) {
           width: "640px",
         }}
       >
-        <div style={{ fontSize: 28, color: "#525252" }}>Swag Store</div>
+        <div style={{ fontSize: 28, color: "#525252" }}>Vercel Swag Store</div>
         <div style={{ marginTop: 20, fontSize: 60, fontWeight: 700, lineHeight: 1.1 }}>
           {product.name}
         </div>

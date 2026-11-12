@@ -10,11 +10,11 @@ import { QuantityControl } from "./quantity-control";
 
 export const metadata: Metadata = {
   title: "Your cart",
-  description: "Review the items in your Swag Store cart.",
+  description: "Review the items in your Vercel Swag Store cart.",
   robots: { index: false, follow: false },
   openGraph: {
-    title: "Your cart | Swag Store",
-    description: "Review the items in your Swag Store cart.",
+    title: "Your cart | Vercel Swag Store",
+    description: "Review the items in your Vercel Swag Store cart.",
     url: "/cart",
   },
 };

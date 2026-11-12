@@ -8,11 +8,11 @@ import { listProducts } from "@/lib/api/catalog";
 
 // The root title template only applies to nested routes, so the home title is set in full.
 export const metadata: Metadata = {
-  title: { absolute: "Swag Store | Wear the framework you ship with" },
+  title: { absolute: "Vercel Swag Store | Wear the framework you ship with" },
   description:
     "Premium black swag for developers who build with Vercel. Tees, bottles, bags, and tech gear.",
   openGraph: {
-    title: "Swag Store | Wear the framework you ship with",
+    title: "Vercel Swag Store | Wear the framework you ship with",
     description:
       "Premium black swag for developers who build with Vercel. Tees, bottles, bags, and tech gear.",
     url: "/",

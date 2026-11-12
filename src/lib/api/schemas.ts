@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// Runtime schemas for the Swag Store API. Every response is parsed against these,
+// Runtime schemas for the Vercel Swag Store API. Every response is parsed against these,
 // so an unexpected response shape fails clearly instead of reaching the UI.
 // Prices are integer cents (3000 = $30.00).
 
@@ -67,4 +67,24 @@ export const CartSchema = z.object({
   currency: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),
+});
+
+// GET /store/config: store name, feature flags, social links, and SEO defaults.
+export const StoreConfigSchema = z.object({
+  storeName: z.string(),
+  currency: z.string(),
+  features: z.record(z.string(), z.boolean()),
+  socialLinks: z.record(z.string(), z.string()).optional(),
+  seo: z.object({
+    defaultTitle: z.string(),
+    titleTemplate: z.string(),
+    defaultDescription: z.string(),
+  }),
+});
+
+// GET /health: API status and the state of its dependent services.
+export const HealthSchema = z.object({
+  status: z.string(),
+  timestamp: z.string(),
+  services: z.record(z.string(), z.string()),
 });

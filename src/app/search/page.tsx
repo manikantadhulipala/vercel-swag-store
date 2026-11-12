@@ -15,11 +15,11 @@ type PageProps = {
 export const metadata: Metadata = {
   title: "Search",
   description:
-    "Search the Swag Store catalog by name, description, or tag, and filter by category.",
+    "Search the Vercel Swag Store catalog by name, description, or tag, and filter by category.",
   openGraph: {
-    title: "Search | Swag Store",
+    title: "Search | Vercel Swag Store",
     description:
-      "Search the Swag Store catalog by name, description, or tag, and filter by category.",
+      "Search the Vercel Swag Store catalog by name, description, or tag, and filter by category.",
     url: "/search",
   },
 };

@@ -1,13 +1,15 @@
-// Types for the Swag Store API, derived from the runtime schemas so the two stay in sync.
+// Types for the Vercel Swag Store API, derived from the runtime schemas so the two stay in sync.
 import type { z } from "zod";
 import type {
   CartItemSchema,
   CartSchema,
   CategorySchema,
+  HealthSchema,
   PaginationSchema,
   ProductSchema,
   PromotionSchema,
   StockInfoSchema,
+  StoreConfigSchema,
 } from "./schemas";
 
 export type Product = z.infer<typeof ProductSchema>;
@@ -17,3 +19,5 @@ export type Promotion = z.infer<typeof PromotionSchema>;
 export type PaginationMeta = z.infer<typeof PaginationSchema>;
 export type CartItem = z.infer<typeof CartItemSchema>;
 export type Cart = z.infer<typeof CartSchema>;
+export type StoreConfig = z.infer<typeof StoreConfigSchema>;
+export type Health = z.infer<typeof HealthSchema>;
